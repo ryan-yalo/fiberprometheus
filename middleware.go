@@ -40,10 +40,10 @@ type FiberPrometheus struct {
 	defaultURL      string
 }
 
-func create(servicename, namespace, subsystem string, labels map[string]string) *FiberPrometheus {
+func create(serviceName, namespace, subsystem string, labels map[string]string) *FiberPrometheus {
 	constLabels := make(prometheus.Labels)
-	if servicename != "" {
-		constLabels["service"] = servicename
+	if serviceName != "" {
+		constLabels["service"] = serviceName
 	}
 	for label, value := range labels {
 		constLabels[label] = value
@@ -116,20 +116,20 @@ func create(servicename, namespace, subsystem string, labels map[string]string) 
 }
 
 // New creates a new instance of FiberPrometheus middleware
-// servicename is available as a const label
-func New(servicename string) *FiberPrometheus {
-	return create(servicename, "http", "", nil)
+// serviceName is available as a const label
+func New(serviceName string) *FiberPrometheus {
+	return create(serviceName, "http", "", nil)
 }
 
 // NewWith creates a new instance of FiberPrometheus middleware but with an ability
 // to pass namespace and a custom subsystem
-// Here servicename is created as a constant-label for the metrics
+// Here serviceName is created as a constant-label for the metrics
 // Namespace, subsystem get prefixed to the metrics.
 //
-// For e.g namespace = "my_app", subsyste = "http" then then metrics would be
-// `my_app_http_requests_total{...,service= "servicename"}`
-func NewWith(servicename, namespace, subsystem string) *FiberPrometheus {
-	return create(servicename, namespace, subsystem, nil)
+// For e.g. namespace = "my_app", subsystem = "http" then metrics would be
+// `my_app_http_requests_total{...,service= "serviceName"}`
+func NewWith(serviceName, namespace, subsystem string) *FiberPrometheus {
+	return create(serviceName, namespace, subsystem, nil)
 }
 
 // NewWithLabels creates a new instance of FiberPrometheus middleware but with an ability
@@ -137,7 +137,7 @@ func NewWith(servicename, namespace, subsystem string) *FiberPrometheus {
 // Here labels are created as a constant-labels for the metrics
 // Namespace, subsystem get prefixed to the metrics.
 //
-// For e.g namespace = "my_app", subsystem = "http" and lables = map[string]string{"key1": "value1", "key2":"value2"}
+// For e.g. namespace = "my_app", subsystem = "http" and labels = map[string]string{"key1": "value1", "key2":"value2"}
 // then then metrics would become
 // `my_app_http_requests_total{...,key1= "value1", key2= "value2" }``
 func NewWithLabels(labels map[string]string, namespace, subsystem string) *FiberPrometheus {
@@ -165,17 +165,26 @@ func (ps *FiberPrometheus) Middleware(ctx *fiber.Ctx) error {
 	defer func() {
 		ps.requestInFlight.WithLabelValues(method, path).Dec()
 	}()
-	if err := ctx.Next(); err != nil {
-		return err
+	err := ctx.Next()
+	var status int
+	if err != nil {
+		if e, ok := err.(*fiber.Error); ok {
+			// Get correct error code from fiber.Error type
+			status = e.Code
+		} else {
+			// fallback to default error code
+			// https://docs.gofiber.io/guide/error-handling
+			status = fiber.StatusInternalServerError
+		}
+	} else {
+		status = ctx.Response().StatusCode()
 	}
 
-	statusCode := strconv.Itoa(ctx.Response().StatusCode())
-	ps.requestsTotal.WithLabelValues(statusCode, method, path).
-		Inc()
+	statusCode := strconv.Itoa(status)
+	ps.requestsTotal.WithLabelValues(statusCode, method, path).Inc()
 
-	elapsed := float64(time.Since(start).Nanoseconds()) / 1000000000
-	ps.requestDuration.WithLabelValues(statusCode, method, path).
-		Observe(elapsed)
+	elapsed := float64(time.Since(start).Nanoseconds()) / 1e9
+	ps.requestDuration.WithLabelValues(statusCode, method, path).Observe(elapsed)
 
-	return nil
+	return err
 }
