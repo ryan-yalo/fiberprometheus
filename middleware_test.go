@@ -66,6 +66,7 @@ func TestMiddleware(t *testing.T) {
 		t.Errorf("got %s; want %s", got, want)
 
 	}
+	prometheus.Unregister()
 }
 
 func TestMiddlewareWithServiceName(t *testing.T) {
@@ -103,6 +104,7 @@ func TestMiddlewareWithServiceName(t *testing.T) {
 	if !strings.Contains(got, want) {
 		t.Errorf("got %s; want %s", got, want)
 	}
+	prometheus.Unregister()
 }
 
 func TestMiddlewareWithLabels(t *testing.T) {
@@ -143,5 +145,24 @@ func TestMiddlewareWithLabels(t *testing.T) {
 	want = `my_service_http_requests_in_progress_total{customkey1="customvalue1",customkey2="customvalue2",method="GET",path="/"} 0`
 	if !strings.Contains(got, want) {
 		t.Errorf("got %s; want %s", got, want)
+	}
+	prometheus.Unregister()
+}
+
+func TestFiberPrometheus_Unregister(t *testing.T) {
+	// registration should be able to occur multiple times and not trigger a duplicate collector panic from prometheus
+	app := fiber.New()
+	for i := 0; i < 10; i++ {
+		prometheus := New("test-service")
+		prometheus.RegisterAt(app, "/metrics")
+		app.Use(prometheus.Middleware)
+		req := httptest.NewRequest("GET", "/metrics", nil)
+		resp, _ := app.Test(req)
+		if resp.StatusCode != 200 {
+			t.Fail()
+		}
+		if !prometheus.Unregister() {
+			t.Fail()
+		}
 	}
 }

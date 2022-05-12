@@ -150,6 +150,16 @@ func (ps *FiberPrometheus) RegisterAt(app *fiber.App, url string) {
 	app.Get(ps.defaultURL, adaptor.HTTPHandler(promhttp.Handler()))
 }
 
+// Unregister will unregister all prometheus collectors
+func (ps *FiberPrometheus) Unregister() bool {
+	for _, collector := range []prometheus.Collector{ps.requestDuration, ps.requestInFlight, ps.requestsTotal} {
+		if !prometheus.Unregister(collector) {
+			return false
+		}
+	}
+	return true
+}
+
 // Middleware is the actual default middleware implementation
 func (ps *FiberPrometheus) Middleware(ctx *fiber.Ctx) error {
 
