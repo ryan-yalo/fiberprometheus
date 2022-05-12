@@ -2,11 +2,11 @@
 
 Prometheus middleware for gofiber.
 
-![Release](https://img.shields.io/github/release/ansrivas/fiberprometheus.svg)
+![Release](https://img.shields.io/github/release/ryan-yalo/fiberprometheus.svg)
 [![Discord](https://img.shields.io/badge/discord-join%20channel-7289DA)](https://gofiber.io/discord)
-![Test](https://github.com/ansrivas/fiberprometheus/workflows/Test/badge.svg)
-![Security](https://github.com/ansrivas/fiberprometheus/workflows/Security/badge.svg)
-![Linter](https://github.com/ansrivas/fiberprometheus/workflows/Linter/badge.svg)
+![Test](https://github.com/ryan-yalo/fiberprometheus/workflows/Test/badge.svg)
+![Security](https://github.com/ryan-yalo/fiberprometheus/workflows/Security/badge.svg)
+![Linter](https://github.com/ryan-yalo/fiberprometheus/workflows/Linter/badge.svg)
 
 Following metrices are available by default:
 
@@ -20,7 +20,7 @@ http_requests_in_progress_total
 
 ```
 go get -u github.com/gofiber/fiber/v2
-go get -u github.com/ansrivas/fiberprometheus/v2
+go get -u github.com/ryan-yalo/fiberprometheus/v2
 ```
 
 ### Example using v2
@@ -29,7 +29,7 @@ go get -u github.com/ansrivas/fiberprometheus/v2
 package main
 
 import (
-	"github.com/ansrivas/fiberprometheus/v2"
+	"github.com/ryan-yalo/fiberprometheus/v2"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -65,7 +65,7 @@ package main
 
 import (
   "github.com/gofiber/fiber"
-  "github.com/ansrivas/fiberprometheus"
+  "github.com/ryan-yalo/fiberprometheus"
 )
 
 func main() {
